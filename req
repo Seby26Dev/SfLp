@@ -1,2 +1,3 @@
-git clone https://github.com/dirkjanm/PKINITtools.git
-git clone https://github.com/ShutdownRepo/pywhisker.git
+1) Run -> git clone https://github.com/dirkjanm/PKINITtools.git
+2) Run -> git clone https://github.com/ShutdownRepo/pywhisker.git
+3) Run -> mv pywhisker/pywhisker/pywhisker.py .
