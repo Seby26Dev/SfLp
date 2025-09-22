@@ -19,11 +19,22 @@
 
 <img width="741" height="186" alt="image" src="https://github.com/user-attachments/assets/72030468-6d11-4b7f-b45c-1036c05f60de" />
 
+0) Open req and git the file
 
+```
+git clone https://github.com/dirkjanm/PKINITtools.git
+git clone https://github.com/ShutdownRepo/pywhisker.git
+```
+
+0) Sorry i forgot to move pywhisker :) 
+
+```
+mv pywhisker/pywhisker/pywhisker.py .
+```
 
 1) Chmod
 ```
-chmod +x WoGr.py WoGr_rights.py
+chmod +x WoGr.py WoGr_rights.py pywhisker.py
 ```
 2) Run WoGr.py
 
