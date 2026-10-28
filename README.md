@@ -29,7 +29,7 @@ git clone https://github.com/ShutdownRepo/pywhisker.git
 0) Sorry i forgot to move pywhisker :) 
 
 ```
-mv pywhisker/pywhisker/pywhisker.py .
+cp pywhisker/pywhisker/pywhisker.py .
 ```
 
 1) Chmod
